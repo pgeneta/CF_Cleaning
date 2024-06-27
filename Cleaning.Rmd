@@ -1,0 +1,121 @@
+---
+title: "Cleaning"
+author: "Paul Geneta"
+date: "2024-06-27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Load libraries
+library(tidyr)
+library(tidyverse)
+
+#Load Dataset
+dataset <- read.csv("~/Documents/R/Crossfit/data/df_games_conso.csv", stringsAsFactors = F)
+```
+
+
+
+Fix countryofOriginName and regionName
+```{r}
+dataset %>% 
+  filter(countryOfOriginCode != "",
+         countryOfOriginName == "") 
+
+canada_regions <- c("Canada East", "Canada West")
+
+US_regions <- c('Northern California', 'Southern California', 'Central East', 'Mid Atlantic','North Central', 'North East', 'North West', 
+                'South Central', 'South East', 'South West')
+
+north_america_countries <- c('Canada', 'United States', 'Cayman Islands', 'Jamaica')
+
+central_america_countries <- c('Belize', 'Costa Rica', 'Dominican Republic', 'El Salvador', 'Guatemala', 'Honduras','Mexico', 
+                               'Nicaragua', 'Panama')
+
+south_america_countries <- c('Argentina', 'Bahamas', 'Barbados', 'Bolivia', 'Brazil', 'Chile', 'Colombia', 'Ecuador', 'Guyana', 
+                             'Jamaica', 'Kosovo', 'Morocco', 'Paraguay', 'Peru', 'Saint Lucia', 'Suriname','Trinidad and Tobago', 
+                             'Uruguay', 'Venezuela')
+
+europe_countries <- c('Andorra', 'Austria', 'Belarus', 'Belgium', 'Bosnia and Herzegovina', 'Bulgaria', 'Croatia', 'Cyprus',
+                    'Czech Republic', 'Denmark', 'Estonia', 'Finland', 'France', 'Germany', 'Greece', 'Hungary', 'Iceland', 
+                    'Ireland', 'Italy', 'Latvia', 'Lithuania', 'Luxembourg', 'Malta', 'Netherlands', 'Norway', 'Poland',
+                    'Portugal', 'Romania', 'Russia', 'Serbia', 'Slovakia', 'Slovenia', 'Spain', 'Sweden', 'Switzerland',
+                    'Turkey', 'Ukraine', 'United Kingdom')
+
+african_countries <- c('Algeria', 'Angola', 'Botswana', 'Egypt', 'Ghana', 'Kenya', 'Mauritius', 'Mozambique', 'Namibia',
+                    'Nigeria', 'Senegal', 'South Africa', 'Tunisia', 'Zimbabwe')
+
+asian_countries <-  c('Afghanistan', 'Bahrain', 'Brunei Darussalam', 'Cambodia', 'China', 'Egypt', 'India', 'Indonesia',
+                  'Iran', 'Iraq', 'Israel', 'Japan', 'Jordan', 'Korea, Republic of', 'Kuwait', 'Lebanon', 'Malaysia', 
+                  'Oman', 'Pakistan', 'Palestinian Territory', 'Philippines', 'Qatar', 'Saudi Arabia', 'Singapore', 
+                  'Sri Lanka', 'Syrian Arab Republic', 'Turkey', 'United Arab Emirates', 'Viet Nam', 'Russian Federation',
+                  'United Arab Emirates')
+
+oceania_countries <- c('Australia', 'New Zealand', 'Papua New Guinea', 'Samoa', 'Tonga')
+
+df_clean <- dataset %>% 
+  mutate(
+    countryOfOriginName = case_when( #fix specific countryofOriginCode values with corresponding countryofOriginName
+    countryOfOriginCode == "BY" ~ "Belarus",
+    countryOfOriginCode == "RU" ~ "Russian Federation",
+    regionName %in% canada_regions ~ "Canada",
+    regionName %in% US_regions ~ "United States",
+    TRUE ~ countryOfOriginName),
+    regionName = case_when( #fix specific regionName values with corresponding countryofOriginName
+    countryOfOriginName %in% north_america_countries ~ "North America",
+    countryOfOriginName %in% central_america_countries ~ "Central America",
+    countryOfOriginName %in% south_america_countries ~ "South America",
+    countryOfOriginName %in% europe_countries ~ "Europe",
+    countryOfOriginName %in% african_countries ~ "Africa",
+    countryOfOriginName %in% asian_countries ~ "Asia",
+    countryOfOriginName %in% oceania_countries ~ "Oceania",
+    countryOfOriginName == "Latin America" ~ "South America",
+    regionName == "Australia" ~ "Oceania",
+    TRUE ~ regionName
+    )
+  )
+
+```
+
+
+```{r}
+#count the number of unique regionName values for each countryofOriginName
+df_clean %>% 
+  group_by(countryOfOriginName) %>% 
+  summarise(regionName_unique = n_distinct(regionName)) %>% 
+  filter(regionName_unique >= 2)
+
+
+
+
+
+```
+
+
+```{r}
+# Filter 'countryOfOriginName' not null while 'regionName' is null (expected to be empty)
+df_clean %>% 
+  filter(countryOfOriginName != "",
+         regionName == "")
+```
+
+
+```{r}
+# Filter 'regionName' not null while 'CountryofOriginName' is null 
+df_clean %>% 
+  filter(countryOfOriginName == "",
+         regionName != "")
+```
+
+
+
+
+
+
+
+
+
