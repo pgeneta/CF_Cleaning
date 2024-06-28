@@ -73,11 +73,13 @@ df_clean <- dataset %>%
     countryOfOriginName %in% african_countries ~ "Africa",
     countryOfOriginName %in% asian_countries ~ "Asia",
     countryOfOriginName %in% oceania_countries ~ "Oceania",
-    countryOfOriginName == "Latin America" ~ "South America",
+    regionName == "Latin America" ~ "South America",
     regionName == "Australia" ~ "Oceania",
     TRUE ~ regionName
     )
   )
+
+
 
 ```
 
@@ -109,6 +111,86 @@ df_clean %>%
 df_clean %>% 
   filter(countryOfOriginName == "",
          regionName != "")
+```
+
+
+```{r}
+#Filter unique countryofOriginName
+unique(df_clean$countryOfOriginName)
+```
+
+
+```{r}
+#Unique region names
+unique(df_clean$regionName)
+```
+
+
+Fix countryofOriginCode and regionId plus add statusId
+
+```{r}
+df_clean2 <- df_clean %>% 
+  mutate(countryOfOriginCode = ifelse(countryOfOriginCode == "", 0, countryOfOriginCode),
+         countryOfOriginName = ifelse(countryOfOriginName == "", 0, countryOfOriginName),
+         regionName = ifelse(regionName == "", 0, regionName),
+         region_id_map = case_when(
+           regionName %in% north_america_countries ~ "1",
+           regionName %in% central_america_countries ~ "2",
+           regionName %in% south_america_countries ~ "3",
+           regionName %in% europe_countries ~ "4",
+           regionName %in% african_countries ~ "5",
+           regionName %in% asian_countries ~ "6",
+           regionName %in% oceania_countries ~ "7",
+           TRUE ~ regionName
+         ),
+         regionId = region_id_map)
+
+
+df_clean2
+```
+
+
+```{r}
+# Filter 'countryOfOriginName' not null while 'regionName' is null (expected to be empty)
+df_clean2 %>% 
+  filter(countryOfOriginName != "",
+         regionName == "")
+```
+
+
+```{r}
+# Filter 'regionName' not null while 'CountryofOriginName' is null 
+df_clean2 %>% 
+  filter(countryOfOriginName == "",
+         regionName != "")
+```
+
+
+Fix height and weight and add BMI
+
+```{r}
+df_clean3<- df_clean2 %>% 
+  separate(height, c("height", "height_metric")) %>%  #Separate column
+  separate(weight, c("weight", "weight_metric")) %>%  
+  mutate(height = as.numeric(height), #convert to numeric
+         weight = as.numeric(weight),
+         height_cm = if_else(height_metric == "in", height*2.54, height), #do calculations to convert to kg, and cm
+         weight_kg = if_else(weight_metric == "lb", weight/2.20462, height),
+         BMI = (weight_kg / (height_cm^2))*10000) %>% #bmi calculation
+  select(-height_metric, -weight_metric, -height, -weight) #clean up full df
+
+df_clean3
+```
+
+Sort overall score
+
+```{r}
+# Replace DQ with -1, indicating competitor was disqualified
+x <- df_clean3 %>% 
+  mutate(overallRank = ifelse(overallRank == "DQ", -1, overallRank),
+         overallRank = as.numeric(overallRank))
+
+x
 ```
 
 
