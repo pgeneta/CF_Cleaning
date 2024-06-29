@@ -193,7 +193,7 @@ x <- df_clean3 %>%
   mutate(overallRank = ifelse(overallRank == "DQ", -1, overallRank),
          overallRank = as.numeric(overallRank))
 
-
+x
 ```
 
 
