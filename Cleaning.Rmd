@@ -5,9 +5,11 @@ date: "2024-06-27"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+[Kaggle link](https://www.kaggle.com/code/tgomesjuliana/crossfit-games-competition-data-cleaning?scriptVersionId=137772920)
 
 ```{r}
 #Load libraries
@@ -22,9 +24,9 @@ dataset <- read.csv("~/Documents/R/Crossfit/data/df_games_conso.csv", stringsAsF
 
 Fix countryofOriginName and regionName
 ```{r}
-dataset %>% 
-  filter(countryOfOriginCode != "",
-         countryOfOriginName == "") 
+# dataset %>% 
+#   filter(countryOfOriginCode != "",
+#          countryOfOriginName == "") 
 
 canada_regions <- c("Canada East", "Canada West")
 
@@ -146,23 +148,23 @@ df_clean2 <- df_clean %>%
          regionId = region_id_map)
 
 
-df_clean2
+head(df_clean2)
 ```
 
 
 ```{r}
 # Filter 'countryOfOriginName' not null while 'regionName' is null (expected to be empty)
-df_clean2 %>% 
+head(df_clean2 %>% 
   filter(countryOfOriginName != "",
-         regionName == "")
+         regionName == ""))
 ```
 
 
 ```{r}
 # Filter 'regionName' not null while 'CountryofOriginName' is null 
-df_clean2 %>% 
+head(df_clean2 %>% 
   filter(countryOfOriginName == "",
-         regionName != "")
+         regionName != ""))
 ```
 
 
@@ -179,13 +181,14 @@ df_clean3<- df_clean2 %>%
          BMI = (weight_kg / (height_cm^2))*10000) %>% #bmi calculation
   select(-height_metric, -weight_metric, -height, -weight) #clean up full df
 
-df_clean3
+head(df_clean3)
 ```
 
 Sort overall score
 
 ```{r}
 # Replace DQ with -1, indicating competitor was disqualified
+#Convert overallRank as numeric
 x <- df_clean3 %>% 
   mutate(overallRank = ifelse(overallRank == "DQ", -1, overallRank),
          overallRank = as.numeric(overallRank))
