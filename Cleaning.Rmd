@@ -189,12 +189,119 @@ Sort overall score
 ```{r}
 # Replace DQ with -1, indicating competitor was disqualified
 #Convert overallRank as numeric
-x <- df_clean3 %>% 
+df_clean4 <- df_clean3 %>% 
   mutate(overallRank = ifelse(overallRank == "DQ", -1, overallRank),
          overallRank = as.numeric(overallRank))
 
+#See which competitors have a 0 placing
+df_clean4 %>% 
+  filter(overallRank == 0)
+
+#Define dictionary conditions to map specific competitorId and year to their corresponding overallRank values
+conditions <- c(
+  `455677_2021` = 38,
+  `592472_2021` = 39,
+  `1019212_2021` = 40,
+  `901702_2021` = 39,
+  `975774_2021` = 40,
+  `975774_2018` = 40,
+  `3200_2015` = 40,
+  `14354_2014` = 40,
+  `151906_2013` = 47
+)
+
+#function to get the key for the conditions vector
+get_condition_key <-  function(competitorId, year){
+  paste0(competitorId, year, sep = "_")
+}
+
+#Apply the conditions mapping to overallRank based on the competitorId and year conditions
+df_clean5 <- df_clean4 %>% 
+  mutate(overallRank = ifelse(
+    get_condition_key(competitorId, year) %in% names(conditions),
+    conditiona[get_condition_key(competitorId, year)],
+    overallRank
+  ))
+
+
+df_clean5 %>% 
+  filter(overallScore == grepl(':', overallScore))
+
+#replace ":" with empty string and divide by 100, only for rows where : is present
+df_clean6 <- df_clean5 %>% 
+  mutate(overallScore = suppressWarnings(if_else(
+    grepl(':', overallScore),
+    as.numeric(gsub(':', '', overallScore))/100,
+    as.numeric(overallScore)))
+    )
+```
+
+
+
+
+```{r}
+#Create null dummy columns for height, weight, age and BMI
+df_clean7 <- df_clean6 %>% 
+  mutate(height_null = if_else(height_cm == 0, 1, 0),
+         weight_null = if_else(weight_kg == 0, 1, 0),
+         age_null = if_else(age == 0, 1, 0),
+         bmi_null = if_else(BMI == 0, 1, 0))
+
+#calculate average height, weight and bmi by gender
+avg_stats <- df_clean7 %>% 
+  filter(BMI < 100) %>% #filtering out extremes - unable to find real height and weight for athletes online
+  group_by(gender) %>% 
+  summarise(mean_height = mean(height_cm, na.rm = T),
+            mean_weight = mean(weight_kg, na.rm = T),
+            mean_bmi = mean(BMI, na.rm = T))
+
+avg_stats
+#Apply avg stats to those with 1 on dummy variables
+df_clean8 <- df_clean7 %>% 
+  filter(gender == "M") %>% 
+  mutate(height_cm = if_else(height_null == 1, 178.6, height_cm),
+         weight_kg = if_else(weight_null == 1, 106.1, weight_kg),
+         BMI = if_else(bmi_null == 1, 33.7, BMI))
+
+df_clean8 <- df_clean8 %>% 
+  filter(gender == "F") %>% 
+  mutate(height_cm = if_else(height_null == 1, 165,4, height_cm),
+         weight_kg = if_else(weight_null == 1, 87.6, weight_kg),
+         BMI = if_else(bmi_null == 1, 33.7, BMI))
+
 
 ```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
