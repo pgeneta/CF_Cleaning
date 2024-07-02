@@ -18,6 +18,7 @@ library(tidyverse)
 
 #Load Dataset
 dataset <- read.csv("~/Documents/R/Crossfit/data/df_games_conso.csv", stringsAsFactors = F)
+
 ```
 
 
@@ -92,10 +93,6 @@ df_clean %>%
   group_by(countryOfOriginName) %>% 
   summarise(regionName_unique = n_distinct(regionName)) %>% 
   filter(regionName_unique >= 2)
-
-
-
-
 
 ```
 
@@ -242,32 +239,83 @@ df_clean6 <- df_clean5 %>%
 ```{r}
 #Create null dummy columns for height, weight, age and BMI
 df_clean7 <- df_clean6 %>% 
+  replace_na(list(height_cm = 0, weight_kg = 0, age = 0, BMI = 0)) %>% 
   mutate(height_null = if_else(height_cm == 0, 1, 0),
          weight_null = if_else(weight_kg == 0, 1, 0),
          age_null = if_else(age == 0, 1, 0),
          bmi_null = if_else(BMI == 0, 1, 0))
 
 #calculate average height, weight and bmi by gender
-avg_stats <- df_clean7 %>% 
-  filter(BMI < 100) %>% #filtering out extremes - unable to find real height and weight for athletes online
-  group_by(gender) %>% 
-  summarise(mean_height = mean(height_cm, na.rm = T),
-            mean_weight = mean(weight_kg, na.rm = T),
-            mean_bmi = mean(BMI, na.rm = T))
-
-avg_stats
+# avg_stats <- df_clean7 %>% 
+#   filter(BMI < 100) %>% #filtering out extremes - unable to find real height and weight for athletes online
+#   group_by(gender) %>% 
+#   summarise(mean_height = mean(height_cm, na.rm = T),
+#             mean_weight = mean(weight_kg, na.rm = T),
+#             mean_bmi = mean(BMI, na.rm = T))
+# 
+# avg_stats
 #Apply avg stats to those with 1 on dummy variables
-df_clean8 <- df_clean7 %>% 
-  filter(gender == "M") %>% 
-  mutate(height_cm = if_else(height_null == 1, 178.6, height_cm),
-         weight_kg = if_else(weight_null == 1, 106.1, weight_kg),
-         BMI = if_else(bmi_null == 1, 33.7, BMI))
 
-df_clean8 <- df_clean8 %>% 
+get_stat <- function(data, stat = c('height', 'weight', 'bmi')){
+  
+  if(stat == 'height'){
+  
+  height <- data %>% 
+  #filter(gender == gen) %>% 
+  group_by(gender) %>% 
+  summarise(height = mean(height_cm, na.rm=T)) %>% 
+  pull(height)
+  
+  return(height)
+
+}else if(stat == 'weight'){
+  
+  weight <- data %>% 
+  #filter(gender == gen) %>% 
+  group_by(gender) %>% 
+  summarise(weight = mean(weight_kg, na.rm=T)) %>% 
+  pull(weight)
+  
+  return(weight)
+}
+  else{
+    bmi <- data %>% 
+  #filter(gender == gen) %>% 
+  group_by(gender) %>% 
+  summarise(bmi = mean(BMI, na.rm=T)) %>% 
+  pull(bmi)
+    
+    return(bmi)
+  }
+
+
+}
+
+get_stat(df_clean7 %>% filter(gender == "M"), 'height')
+# get_stat(df_clean7 %>% filter(gender == "F"), 'height')
+# heightM <- get_stat(df_clean7 %>% filter(gender == "M"), 'height')
+# bmiF <- get_stat(df_clean7 %>%  filter(gender == "M"), 'bmi')
+# weight
+
+
+
+
+df_clean8F <- df_clean7 %>% 
   filter(gender == "F") %>% 
-  mutate(height_cm = if_else(height_null == 1, 165,4, height_cm),
-         weight_kg = if_else(weight_null == 1, 87.6, weight_kg),
-         BMI = if_else(bmi_null == 1, 33.7, BMI))
+  mutate(height_cm = if_else(height_null == 1, get_stat(df_clean7 %>% filter(gender == 'F'), 'height'), height_cm),
+         weight_kg = if_else(weight_null == 1, get_stat(df_clean7 %>% filter(gender == 'F'), 'weight'), weight_kg),
+         BMI = if_else(bmi_null == 1, get_stat(df_clean7 %>% filter(gender == 'F'), 'bmi'), BMI))
+
+df_clean8M <- df_clean7 %>% 
+  filter(gender == "M") %>% 
+  mutate(height_cm = if_else(height_null == 1, get_stat(df_clean7 %>% filter(gender == 'M'), 'height'), height_cm),
+         weight_kg = if_else(weight_null == 1, get_stat(df_clean7 %>% filter(gender == 'M'), 'weight'), weight_kg),
+         BMI = if_else(bmi_null == 1, get_stat(df_clean7 %>% filter(gender == 'M'), 'bmi'), BMI))
+
+#Join dataset back together and Fill null values in affiliateID with 0 and convert affiliateID to integer
+df_clean9 <- rbind(df_clean8F, df_clean8M) %>% 
+  mutate(affiliateId = ifelse(affiliateId == "None", 0, affiliateId)) %>% 
+  arrange(competitorId, year)
 
 
 ```
@@ -276,6 +324,10 @@ df_clean8 <- df_clean8 %>%
 
 
 
+```{r}
+#add games competition
+
+```
 
 
 
